@@ -7,5 +7,8 @@ from rest_framework.response import Response
 
 
 class PostsViewSet(viewsets.ModelViewSet):
-    serializer = PostSerializer
+    serializer_class = PostSerializer
     queryset = Post.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
