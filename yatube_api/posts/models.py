@@ -24,3 +24,7 @@ class Comment(models.Model):
     text = models.TextField()
     created = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
+    
+    
+class Group(models.Model):
+    slug = models.SlugField()
