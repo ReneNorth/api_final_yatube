@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, validators
 from rest_framework.relations import SlugRelatedField, PrimaryKeyRelatedField
 from django.contrib.auth import get_user_model
 
@@ -32,13 +32,29 @@ class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
         fields = ['id', 'title', 'slug', 'description']
-        
-        
+
+
 class FollowSerializer(serializers.ModelSerializer):
     user = SlugRelatedField(slug_field='username', read_only=True)
-    following = SlugRelatedField(slug_field='username', read_only=True)
-    
+    following = SlugRelatedField(slug_field='username',
+                                 queryset=User.objects.all())
+
     class Meta:
         model = Follow
         fields = ['user', 'following']
         read_only_fields = ['user', ]
+
+    def validate(self, value):
+        username = self.context['request'].user
+        author = value.get('following')
+        already_sub = Follow.objects.filter(user_id__username=username,
+                                            following_id__username=author)
+        if already_sub.exists():
+            raise serializers.ValidationError(
+                'Подписка уже существует'
+            )
+        elif username == author:
+            raise serializers.ValidationError(
+                'Зачем подисываться на себя?'
+            )
+        return value
