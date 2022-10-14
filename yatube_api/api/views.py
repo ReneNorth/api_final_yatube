@@ -1,14 +1,18 @@
-from .serializers import PostSerializer, CommentsSerializer, GroupSerializer
+from .serializers import PostSerializer, CommentsSerializer, GroupSerializer, FollowSerializer
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from .pagination import PostsPaginator
 from .permissions import PostsPermission, CommentsPermission
-from posts.models import Post, Comment, Group
-from rest_framework import viewsets, mixins, status
+from posts.models import Post, Comment, Group, Follow
+from rest_framework import viewsets, mixins, status, filters
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny
 
+
 # import response
+
+user_model = get_user_model()
 
 
 class PostsViewSet(viewsets.ModelViewSet):
@@ -19,38 +23,14 @@ class PostsViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-        
+
     def get_permissions(self):
         if self.action == 'retrieve' or self.action == 'list':
             return [AllowAny(), ]
         elif self.action == 'destroy' or self.action == 'partial_update':
             return [PostsPermission(), ]
-        
         else:
             return super().get_permissions()
-            
-    # def destroy(self, request, **kwargs):
-    #     post = get_object_or_404(Post, pk=self.kwargs.get('pk'))
-    #     print(self.check_object_permissions(request, post))
-    #     self.check_object_permissions(request, post)
-    #     post.delete()
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
-    
-    # def partial_update(self, serializer, **kwargs):
-    #     post = get_object_or_404(Post, pk=self.kwargs.get('id'))
-    #     # self.check_object_permissions(self.request, post)
-    #     serializer.save(post=post)
-        # send_email_confirmation(user=self.request.user, modified=instance)
-        
-        
-        # post = get_object_or_404(Post, pk=self.kwargs.get('id'))
-        # serializer = PostSerializer(post, data=request.data)
-        # self.check_object_permissions(self.request, post)
-        # if serializer.is_valid():
-        #     serializer.save()
-        #     return Response(serializer.data,
-        #                     status=status.HTTP_200_OK)
-        # return Response(status=status.HTTP_403_FORBIDDEN)
 
 
 class CommentsRetDelPatchViewSet(viewsets.ModelViewSet):
@@ -66,8 +46,6 @@ class CommentsRetDelPatchViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         post = get_object_or_404(Post, id=self.kwargs.get('id'))
         serializer.save(author=self.request.user, post=post)
-        
-
 
 
 class GroupsRetreiveListViewSet(mixins.RetrieveModelMixin,
@@ -76,3 +54,22 @@ class GroupsRetreiveListViewSet(mixins.RetrieveModelMixin,
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [AllowAny, ]
+
+
+class FollowGetPostViewSet(mixins.CreateModelMixin,
+                           mixins.ListModelMixin,
+                           viewsets.GenericViewSet):
+    queryset = Follow.objects.all()
+    serializer_class = FollowSerializer
+    filter_backends = [filters.SearchFilter, ]
+    search_fields = ('following__username',) 
+    
+    def get_queryset(self):
+        user = get_object_or_404(user_model, username=self.request.user)
+        self.queryset = Follow.objects.filter(user_id=user.id)
+        return self.queryset
+
+    def perform_create(self, serializer):
+        author_username = serializer.initial_data.get('following')
+        author_id = user_model.objects.get(username=author_username).id
+        serializer.save(user_id=self.request.user.id, following_id=author_id)

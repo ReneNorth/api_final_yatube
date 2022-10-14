@@ -1,8 +1,10 @@
 from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField
+from rest_framework.relations import SlugRelatedField, PrimaryKeyRelatedField
+from django.contrib.auth import get_user_model
 
+from posts.models import Comment, Post, Group, Follow
 
-from posts.models import Comment, Post, Group
+User = get_user_model()
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -11,25 +13,32 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ['id', 'author', 'text', 'pub_date', 'image', 'group']
         model = Post
-        read_only_fields = ('author', 'pub_date', 'author', 'id')
+        read_only_fields = ('author', 'pub_date', 'id')
         extra_kwargs = {'text': {'required': True}}
 
 
 class CommentsSerializer(serializers.ModelSerializer):
-    post = serializers.PrimaryKeyRelatedField(many=False,
-                                              queryset=Post.objects.all())
     author = serializers.SlugRelatedField(read_only=True,
                                           slug_field='username')
 
     class Meta:
         model = Comment
         fields = ('id', 'author', 'post', 'text', 'created')
-        read_only_fields = ('author', )
+        read_only_fields = ('author', 'post')
         extra_kwargs = {'text': {'required': True}}
-
 
 
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        fields = ('id', 'title', 'slug', 'description')
+        fields = ['id', 'title', 'slug', 'description']
+        
+        
+class FollowSerializer(serializers.ModelSerializer):
+    user = SlugRelatedField(slug_field='username', read_only=True)
+    following = SlugRelatedField(slug_field='username', read_only=True)
+    
+    class Meta:
+        model = Follow
+        fields = ['user', 'following']
+        read_only_fields = ['user', ]
