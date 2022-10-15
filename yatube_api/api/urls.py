@@ -10,6 +10,9 @@ router.register('groups', GroupsRetreiveListViewSet)
 router.register(r'posts/(?P<id>\d+)/comments', CommentsRetDelPatchViewSet)
 router.register('follow', FollowGetPostViewSet)
 
+
 urlpatterns = [
     path('api/v1/', include(router.urls)),
+    path('api/v1/', include('djoser.urls')),
+    path('api/v1/', include('djoser.urls.jwt')),
 ]

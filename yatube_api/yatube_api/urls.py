@@ -20,8 +20,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/', include('djoser.urls')),
-    path('api/v1/', include('djoser.urls.jwt')),
     path('', include('api.urls')),
     path(
         'redoc/',
