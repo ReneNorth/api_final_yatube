@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from posts.models import Comment, Follow, Group, Post
 from rest_framework import filters, mixins, viewsets
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 
 from .permissions import CommentsPermission, PostsPermission
 from .serializers import (CommentsSerializer, FollowSerializer,
@@ -22,12 +22,9 @@ class PostsViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
     def get_permissions(self):
-        if self.action == 'retrieve' or self.action == 'list':
-            return [AllowAny(), ]
-        elif self.action == 'destroy' or self.action == 'partial_update':
+        if self.action == 'destroy' or self.action == 'partial_update':
             return [PostsPermission(), ]
-        else:
-            return super().get_permissions()
+        return super().get_permissions()
 
 
 class CommentsRetDelPatchViewSet(viewsets.ModelViewSet):
@@ -45,12 +42,9 @@ class CommentsRetDelPatchViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, post=post)
 
 
-class GroupsRetreiveListViewSet(mixins.RetrieveModelMixin,
-                                mixins.ListModelMixin,
-                                viewsets.GenericViewSet):
+class GroupsRetreiveListViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    permission_classes = [AllowAny, ]
 
 
 class FollowGetPostViewSet(mixins.CreateModelMixin,
@@ -60,6 +54,7 @@ class FollowGetPostViewSet(mixins.CreateModelMixin,
     serializer_class = FollowSerializer
     filter_backends = [filters.SearchFilter, ]
     search_fields = ('following__username',)
+    permission_classes = [IsAuthenticated, ]
 
     def get_queryset(self):
         user = self.request.user

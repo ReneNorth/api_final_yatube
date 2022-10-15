@@ -46,9 +46,8 @@ class FollowSerializer(serializers.ModelSerializer):
     def validate(self, value):
         username = self.context['request'].user
         author = value.get('following')
-        already_sub = Follow.objects.filter(user_id__username=username,
-                                            following_id__username=author)
-        if already_sub.exists():
+        if Follow.objects.filter(user_id__username=username,
+                                 following_id__username=author).exists():
             raise serializers.ValidationError(
                 'Подписка уже существует'
             )
