@@ -48,16 +48,13 @@ class GroupsRetreiveListViewSet(viewsets.ReadOnlyModelViewSet):
 class FollowGetPostViewSet(mixins.CreateModelMixin,
                            mixins.ListModelMixin,
                            viewsets.GenericViewSet):
-    queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     filter_backends = [filters.SearchFilter, ]
     search_fields = ('following__username',)
     permission_classes = [IsAuthenticated, ]
 
     def get_queryset(self):
-        user = self.request.user
-        self.queryset = Follow.objects.filter(user_id=user.id)
-        return self.queryset
+        return Follow.objects.filter(user_id=self.request.user.id)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
