@@ -7,10 +7,6 @@
 git clone git@github.com:ReneNorth/api_final_yatube.git
 ```
 
-```
-cd kittygram
-```
-
 Cоздать и активировать виртуальное окружение:
 
 ```
